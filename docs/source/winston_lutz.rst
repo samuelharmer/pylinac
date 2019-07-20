@@ -20,17 +20,19 @@ To run the Winston-Lutz demo, create a script or start an interpreter session an
 Results will be printed to the console and a figure showing the zoomed-in images will be generated::
 
     Winston-Lutz Analysis
-
+    =================================
     Number of images: 17
-    Maximum 2D CAX->BB distance: 1.25mm
-    Median 2D CAX->BB distance: 0.62mm
-    Gantry 3D isocenter radius: 0.67mm
-    Gantry iso->BB vector: Vector(x=0.22, y=0.10, z=0.38)
-    Gantry sag in the z-direction: 1.01mm
-    Collimator 2D isocenter radius: 0.51mm
-    Collimator 2D iso->BB vector: Vector(x=0.17, y=0.38, z=0.00)
-    Couch 2D isocenter radius: 1.20mm
-    Couch 2D iso->BB vector: Vector(x=-0.94, y=-0.35, z=0.00)
+    Maximum 2D CAX->BB distance: 1.14mm
+    Median 2D CAX->BB distance: 0.64mm
+    Shift BB to iso, facing gantry: LEFT 0.02mm; DOWN 0.11mm; OUT 0.29mm
+    Gantry 3D isocenter diameter: 0.97mm
+    Maximum Gantry RMS deviation (mm): 0.99mm
+    Maximum EPID RMS deviation (mm): 0.00mm
+    Collimator 2D isocenter diameter: 1.12mm
+    Maximum Collimator RMS deviation (mm): 0.87
+    Couch 2D isocenter diameter: 1.13mm
+    Maximum Couch RMS deviation (mm): 1.14
+
 
 .. image:: images/winston_lutz_demo.png
 
@@ -56,6 +58,11 @@ the same coordinate space as `Winkler et al`_. All coordinates are looking from 
 * **Y-axis** - Anterior-Posterior, or up-down, with up being positive.
 * **Z-axis** - Gun-Target, or in-out, with out/Target being positive.
 
+
+.. note::
+    Collimator iso size is always in the plane normal to the gantry, while couch iso size is always in
+    the x-z plane.
+
 Typical Use
 -----------
 
@@ -72,18 +79,26 @@ You can also load a ZIP archive with the images in it::
 
     wl = WinstonLutz.from_zip('path/to/wl.zip')
 
-And that's it! Once loaded you can view images, gantry sag, or print the results::
+And that's it! Once loaded you can view images, print the results, or publish a PDF report::
 
+    # plot all the images
     wl.plot_images()
-    wl.plot_gantry_sag()
     # plot an individual image
     wl.images[3].plot()
     # save a figure of the image plots
     wl.save_plots('wltest.png')
-    # return the gantry isocenter relative to the BB
-    wl.gantry_iso2bb_vector
     # print to PDF
     wl.publish_pdf('mywl.pdf')
+
+If you want to shift the BB based on the results and perform the test again there is a method for that::
+
+    print(wl.bb_shift_instructions())
+    # LEFT: 0.1mm, DOWN: 0.22mm, ...
+
+You can also pass in your couch coordinates and the new values will be generated::
+
+    print(wl.bb_shift_instructions(couch_vrt=0.41, couch_lng=96.23, couch_lat=0.12))
+    New couch coordinates (mm): VRT: 0.32; LNG: 96.11; LAT: 0.11
 
 .. _using_file_names_wl:
 
@@ -92,8 +107,8 @@ Using File Names
 
 If your linac EPID images do not include axis information (such as Elekta) you can specify it in the file name.
 Any and all of the three axes can be defined. If one is not defined and is not in the DICOM tags, it will default to 0.
-The syntax to define the axes: "*gantry0*coll0*couch0*". There can be any text before, after, or in between each axis definition.
-However, the axes numerical value *must* immediately follow the axis name. Axis names are also fixed. The following examples
+The syntax to define the axes: "<*>gantry0<*>coll0<*>couch0<*>". There can be any text before, after, or in between each axis definition.
+However, the axes numerical value **must** immediately follow the axis name. Axis names are also fixed. The following examples
 are valid:
 
 * MyWL-gantry0-coll90-couch315.dcm
@@ -107,6 +122,10 @@ The following are invalid:
 
 * mywl-gantry=0-coll=90-couch=315.dcm
 * gan45_collimator30-table270.dcm
+
+.. note:: If using filenames any relevant axes must be defined, otherwise they will default to zero. For example,
+          if the acquisition was at gantry=45, coll=15, couch=0 then the filename must include both the gantry and collimator
+          in the name (<...gantry45...coll15....dcm>). For this example, the couch need not be defined since it is 0.
 
 
 Algorithm

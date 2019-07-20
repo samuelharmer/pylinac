@@ -1,12 +1,12 @@
 import itertools
-from tkinter import *
-from tkinter.ttk import *
+from tkinter import Label, Button, StringVar, BooleanVar, DoubleVar, IntVar, Checkbutton, Tk
+from tkinter.ttk import Frame, Notebook, Combobox, Entry
 from tkinter import filedialog
+from tkinter import messagebox
 import os.path as osp
-import os
 import webbrowser
 
-from . import picketfence, vmat, ct, log_analyzer, starshot, planar_imaging, __version__, winston_lutz, watcher
+from . import picketfence, vmat, ct, log_analyzer, starshot, planar_imaging, __version__, winston_lutz, utilities, watcher
 
 
 class PylinacGUI(Frame):
@@ -97,31 +97,32 @@ class PylinacGUI(Frame):
             self.vmat_dmlcimg.set(f)
 
         def analyze_vmat():
-            v = vmat.VMAT(images=(self.vmat_openimg.get(), self.vmat_dmlcimg.get()),
-                          delivery_types=(vmat.OPEN, vmat.DMLC))
-            v.analyze(test=self.vmat_test.get(), tolerance=self.vmat_tol.get(), x_offset=self.vmat_xoff.get())
+            images = (self.vmat_openimg.get(), self.vmat_dmlcimg.get())
+            if self.vmat_test.get() == 'DRGS':
+                v = vmat.DRGS(image_paths=images)
+            else:
+                v = vmat.DRMLC(image_paths=images)
+            v.analyze(tolerance=self.vmat_tol.get())
             fname = osp.join(self.vmat_dmlcimg.get().replace('.dcm', '.pdf'))
+            fname = utilities.file_exists(fname)
             v.publish_pdf(fname)
             self.vmat_pdf.set(fname)
-            os.startfile(fname)
+            utilities.open_path(fname)
 
         self.vmat_tab = Frame(self.notebook)
         self.vmat_openimg = StringVar()
         self.vmat_dmlcimg = StringVar()
-        self.vmat_test = StringVar(value=vmat.DRGS)
+        self.vmat_test = StringVar(value='DRGS')
         self.vmat_tol = DoubleVar(value=1.5)
-        self.vmat_xoff = IntVar(value=0)
         self.vmat_pdf = StringVar()
         Button(self.vmat_tab, text='Load Open Image...', command=load_open).grid(column=1, row=1)
         Button(self.vmat_tab, text='Load DMLC Image...', command=load_dmlc).grid(column=1, row=3)
         Label(self.vmat_tab, textvariable=self.vmat_openimg).grid(column=1, row=2)
         Label(self.vmat_tab, textvariable=self.vmat_dmlcimg).grid(column=1, row=4)
         Label(self.vmat_tab, text='Test type:').grid(column=1, row=5)
-        Combobox(self.vmat_tab, values=(vmat.DRGS, vmat.DRMLC), textvariable=self.vmat_test).grid(column=2, row=5)
+        Combobox(self.vmat_tab, values=('DRGS', 'DRMLC'), textvariable=self.vmat_test).grid(column=2, row=5)
         Label(self.vmat_tab, text='Tolerance (%):').grid(column=1, row=6)
         Entry(self.vmat_tab, width=7, textvariable=self.vmat_tol).grid(column=2, row=6)
-        Label(self.vmat_tab, text='X-offset (px):').grid(column=1, row=7)
-        Entry(self.vmat_tab, width=7, textvariable=self.vmat_xoff).grid(column=2, row=7)
         Button(self.vmat_tab, text='Analyze', command=analyze_vmat).grid(column=1, row=8)
         Label(self.vmat_tab,
               text='Analysis will analyze the file(s) according to the settings, \nsave a PDF in the same directory as the original file location and then open it.').grid(
@@ -152,9 +153,10 @@ class PylinacGUI(Frame):
                        num_pickets=pickets,
                        )
             fname = osp.join(self.pf_file.get().replace('.dcm', '.pdf'))
+            fname = utilities.file_exists(fname)
             pf.publish_pdf(fname)
             self.pf_pdf.set(fname)
-            os.startfile(fname)
+            utilities.open_path(fname)
 
         self.pf_tab = Frame(self.notebook)
         self.pf_filter = BooleanVar(value=False)
@@ -200,9 +202,10 @@ class PylinacGUI(Frame):
                 fname = self.ct_file.get().replace('.zip', '.pdf')
             cat.analyze(hu_tolerance=self.ct_hu.get(), thickness_tolerance=self.ct_thickness.get(),
                         scaling_tolerance=self.ct_scaling.get())
+            fname = utilities.file_exists(fname)
             cat.publish_pdf(fname)
             self.ct_pdf.set(fname)
-            os.startfile(fname)
+            utilities.open_path(fname)
 
         self.ct_tab = Frame(self.notebook)
         self.ct_file = StringVar()
@@ -216,7 +219,7 @@ class PylinacGUI(Frame):
         Button(self.ct_tab, text='Load ZIP file...', command=load_zip).grid(column=2, row=3)
         Label(self.ct_tab, textvariable=self.ct_file).grid(column=2, row=4)
         Label(self.ct_tab, text='CatPhan type:').grid(column=2, row=5)
-        Combobox(self.ct_tab, values=('CatPhan504', 'CatPhan503', 'CatPhan600'), textvariable=self.ct_catphantype).grid(column=2, row=6)
+        Combobox(self.ct_tab, values=('CatPhan504', 'CatPhan503', 'CatPhan600', 'CatPhan604'), textvariable=self.ct_catphantype).grid(column=2, row=6)
         Label(self.ct_tab, text='HU Tolerance (HU):').grid(column=1, row=7)
         Entry(self.ct_tab, width=7, textvariable=self.ct_hu).grid(column=1, row=8)
         Label(self.ct_tab, text='Scaling tolerance (mm):').grid(column=2, row=7)
@@ -243,9 +246,10 @@ class PylinacGUI(Frame):
             log = log_analyzer.load_log(self.log_file.get())
             name, _ = osp.splitext(self.log_file.get())
             fname = name + '.pdf'
+            fname = utilities.file_exists(fname)
             log.publish_pdf(fname)
             self.log_pdf.set(fname)
-            os.startfile(fname)
+            utilities.open_path(fname)
 
         self.log_tab = Frame(self.notebook)
         self.log_file = StringVar()
@@ -275,9 +279,10 @@ class PylinacGUI(Frame):
                          recursive=self.star_recursive.get())
             name, _ = osp.splitext(self.star_file.get())
             fname = name + '.pdf'
+            fname = utilities.file_exists(fname)
             star.publish_pdf(fname)
             self.star_pdf.set(fname)
-            os.startfile(fname)
+            utilities.open_path(fname)
 
         self.star_tab = Frame(self.notebook)
         self.star_file = StringVar()
@@ -317,11 +322,12 @@ class PylinacGUI(Frame):
         def analyze_phan():
             phantom = getattr(planar_imaging, self.phan_type.get())(self.phan_file.get())
             phantom.analyze()
-            name, _ = osp.splitext(self.star_file.get())
+            name, _ = osp.splitext(self.phan_file.get())
             fname = name + '.pdf'
-            phantom.publish_pdf(fname)
-            self.star_pdf.set(fname)
-            os.startfile(fname)
+            fname = utilities.file_exists(fname)
+            phantom.publish_pdf(utilities.file_exists(fname))
+            self.phan_pdf.set(fname)
+            utilities.open_path(fname)
 
         self.phan_tab = Frame(self.notebook)
         self.phan_file = StringVar()
@@ -366,9 +372,10 @@ class PylinacGUI(Frame):
             else:
                 wl = winston_lutz.WinstonLutz.from_zip(self.wl_file.get())
                 fname = self.wl_file.get().replace('.zip', '.pdf')
+            fname = utilities.file_exists(fname)
             wl.publish_pdf(fname)
             self.wl_pdf.set(fname)
-            os.startfile(fname)
+            utilities.open_path(fname)
 
         self.wl_tab = Frame(self.notebook)
         self.wl_file = StringVar()
@@ -404,7 +411,15 @@ class PylinacGUI(Frame):
 
 
 def gui():
+
+    def on_exit():
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            root.quit()
+
     root = Tk()
     root.title('Pylinac GUI ' + __version__)
+    root.protocol("WM_DELETE_WINDOW", on_exit)
     app = PylinacGUI(master=root)
     app.mainloop()
+    root.destroy()
+    del root

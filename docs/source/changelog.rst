@@ -3,6 +3,218 @@
 Changelog
 =========
 
+V 2.2.6
+-------
+
+Bug Fixes
+^^^^^^^^^
+
+* `#157 <https://github.com/jrkerns/pylinac/issues/157>`_ This behavior is revered to pre-2.2.2 behavior to match the DFV and other software.
+* `#167 <https://github.com/jrkerns/pylinac/issues/167>`_ Originally, the fix for this was to raise an error and point to a workaround. At the time the fix was to add a parameter to v2.3.
+   Behavior was able to be changed internally to handle this case without an API change.
+
+
+V 2.2.5
+-------
+
+General
+^^^^^^^
+
+The `watcher` function has had several issues. It has been disabled and will be removed in v2.3.
+
+Bug Fixes
+^^^^^^^^^
+
+* `#173 <https://github.com/jrkerns/pylinac/issues/173>`_ When forcing inversion of picket fence, the inversion came after the orientation determination, causing orientation to be wrong when inversion was needed.
+* `#171 <https://github.com/jrkerns/pylinac/issues/171>`_ The `load_log` function was not working correctly when passing a directory or ZIP archive.
+* `#172 <https://github.com/jrkerns/pylinac/issues/172>`_ Calling `publish_pdf` from log_analyzer without passing a filename would fail.
+* `#169 <https://github.com/jrkerns/pylinac/issues/169>`_ VMAT Dynalogs were calculating fluence incorrectly for CCW plans due to the gantry angle replacing the dose.
+* `#160 <https://github.com/jrkerns/pylinac/issues/160>`_ While addressing #160 initially, Trajectory logs were unknowningly affected. Behavior has been reverted to pre-2.2.2 behavior and documentation changed.
+
+
+V 2.2.4
+-------
+
+Bug Fixes
+^^^^^^^^^
+
+* `#165 <https://github.com/jrkerns/pylinac/issues/165>`_ Machine log plots and PDFs showing the Leaf RMS were shown in cm, not in mm, as the axis title indicated.
+* `#167 <https://github.com/jrkerns/pylinac/issues/167>`_ Picket fence images where the pickets are too close to the edge perpendicular to the pickets will fail. This adds an explicit error and mentions a workaround. The next major version will include a `padding` parameter to apply this workaround.
+* `#168 <https://github.com/jrkerns/pylinac/issues/168>`_ Picket fence analyses now crop 2 pixels from every edge. This will allow Elekta images to be analyzed since they inexplicably have a column of dead pixels in EPID images. Should not affect Varian images.
+
+V 2.2.3
+-------
+
+Bug Fixes
+^^^^^^^^^
+
+* `#158 <https://github.com/jrkerns/pylinac/issues/158>`_ Catphan roll determination algorithm has slightly widened the air bubble-finding criterion.
+
+
+V 2.2.2
+-------
+
+Bug Fixes
+^^^^^^^^^
+
+* `#157 <https://github.com/jrkerns/pylinac/issues/157>`_ Dynalog MLC leaf error was calculated incorrectly. Expected positions were off by a row. Error results should be lower on average.
+* `#160 <https://github.com/jrkerns/pylinac/issues/160>`_ Dynalog MLC leaf internal pair mapping (1-61 vs 1-120) was different than documentation. Fluence calculations should not change.
+* `#162 <https://github.com/jrkerns/pylinac/issues/162>`_ The LeedsTOR `angle_offset` in the `.analyze()` method was not being followed by the high-contrast bubbles.
+* `#144 <https://github.com/jrkerns/pylinac/issues/144>`_ The LeedsTOR angle determination is much more robust. Previously, only certain orientations of the phantom would correctly identify.
+
+
+V 2.2.1
+-------
+
+Bug Fixes
+^^^^^^^^^
+
+* `#153 <https://github.com/jrkerns/pylinac/issues/153>`_ Log analyser PDF publishing fix.
+* `#155 <https://github.com/jrkerns/pylinac/issues/155>`_ VMAT PDF report had tolerance listed incorrectly (absolute vs percentage) causing most tolerances to appear as zero due to rounding.
+
+V 2.2.0
+-------
+
+General
+^^^^^^^
+
+* `#131 <https://github.com/jrkerns/pylinac/issues/131>`_ Typing has been added to almost every function and class in pylinac.
+* F-strings have been incorporated. This bumps the minimum version for Python to 3.6.
+* The ``publish_pdf`` method of every module has had its signature changed. Before, not all the signatures matched
+  and only included a few parameters like author and unit name. This has been changed to
+  ``filename: str, notes: str, list of str, open_file: bool, metadata: dict``. Filename and open file are straightforward.
+  notes is a string or list of strings that are placed at the bottom of the report (e.g. 'April monthly redo'). Metadata is a dictionary that will print
+  both the key and value at the top of each page of the report (e.g. physicist and date of measurement)
+* The TG-51 module has been placed under a new module: :ref:`calibration_module`. This is because:
+* A TRS-398 calibration module has been created :ref:`trs398`.
+* The default colormap for arrays is now Viridis, the matplotlib default.
+* A contributer's guide has been added: :ref:`contributer_guide`.
+* `#141 <https://github.com/jrkerns/pylinac/issues/141>`_ The Pylinac logo has been included in the package so that PDFs can be generated without needing www access.
+* A new dependency has been added: `argue <https://pypi.org/project/argue/>`_ which handles input parameters.
+
+
+Flatness & Symmetry
+^^^^^^^^^^^^^^^^^^^
+
+* `#130 <https://github.com/jrkerns/pylinac/issues/130>`_ The flatsym module has been completely rewritten.
+  Documentation has also been updated and should be consulted given the number of changes: :ref:`flatsym_module`.
+
+VMAT
+^^^^
+
+* The overall simplicity of use has been increased by automating & removing several parameters.
+* `#128 <https://github.com/jrkerns/pylinac/issues/128>`_ The ``VMAT`` class has been split into two classes: :class:`~pylinac.vmat.DRGS` and :class:`~pylinac.vmat.DRMLC`. Although there are now two classes
+  instead of one, the overall simplicity has been increased, such as the following:
+
+  * The ``test`` parameter in ``analyze()`` is no longer required and has been removed.
+  * The ``type`` is no longer required in ``.from_demo_images()``.
+  * The demo method matches the other modules: ``.run_demo()``
+  * All naming conventions have been deprecated.
+* The ``x_offset`` parameter has been removed. The x-position is now based on the FWHM of the DMLC field itself.
+  This means the x-position is dynamic and automatic.
+* The ``delivery_types`` parameter has been removed. The delivery types of the images are now automatically determined.
+* The methods for plotting and saving subimages (each image & the profiles) has been converted to a private method
+  (``_plot_subimage()``, ...). There is little need for a public method to plot individually.
+
+TG-51/Calibration
+^^^^^^^^^^^^^^^^^
+
+* `#127 <https://github.com/jrkerns/pylinac/issues/127>`_ A TRS-398 module has been added. There are two main classes: ``TRS398Photon`` and ``TRS398Electron``.
+* `#129 <https://github.com/jrkerns/pylinac/issues/129>`_ The TG-51 module has been refactored to add a ``TG51ElectronLegacy`` and ``TG51ElectronModern`` calibration class.
+  The Legacy class uses the classic TG-51 values that require a kecal value and a Pgradient measurement. The Modern
+  class uses the equations from Muir & Rogers 2014 to calculate kQ that updates and incorporates the Pgradient and
+  kecal values. While not strictly TG-51, these values are very likely to be incorporated into the next TG-51 addendum
+  as the kQ values for photons already have.
+* Certain parameters have been refactored: ``volt_high`` and ``volt_low`` have been refactored to ``voltage_reference``
+  and ``voltage_reduced``, ``m_raw``, ``m_low``, and ``m_opp`` have been refactored to ``m_reference``, ``m_reduced``,
+  and ``m_opposite``. These parameters are also the same for the TRS-398 classes (see #127).
+* The ``kq`` function has been separated into three functions: ``kq_photon_pdd10x``, ``kq_photon_tpr2010``, and
+  ``kq_electron``.
+* A PDD(20,10) to TPR(20,10) converter function has been added: `tpr2010_from_pdd2010`.
+* Pressure and temperature conversion helper functions have been added: `mmHg2kPa`, `mbar2kPa`, `fahrenheit2celsius`.
+  This can be used in either TG-51 or TRS-398 to get TPR without actually needing to measure it.
+* Defaults were removed from most functions to avoid possible miscalibration/miscalculation.
+* Most parameters of both TG-51 and TRS-398 were changed to be keyword only. This will prevent accidental miscalculations from simple positional argument mismatches.
+
+Bug Fixes
+^^^^^^^^^
+* `#138 <https://github.com/jrkerns/pylinac/issues/138>`_/`#139 <https://github.com/jrkerns/pylinac/issues/139>`_: Too
+  many arguments when plotting the leaf error subplot for picketfence.
+* `#133 <https://github.com/jrkerns/pylinac/issues/133>`_: Trajectory log HDMLC status was reversed. This only affected
+  fluence calculations using the ``equal_aspect`` argument.
+* `#134 <https://github.com/jrkerns/pylinac/issues/134>`_: Trajectory log fluence array values were not in absolute MU.
+
+
+V 2.1.0
+-------
+
+General
+^^^^^^^
+
+* After reflection, the package seems to have bloated in some respects.
+  Certain behaviors are only helpful in very few circumstances and are hard to maintain w/ proper testing.
+  They are described below or in their respective sections.
+* The command line commands have been deprecated. All commands were simply shortcuts that are just as easy to place in
+  a 1-2 line Python script. There was no good use case for it in the context of how typical physicists work.
+* The interactive plotting using MPLD3 has been deprecated. Matplotlib figures and PDF reports should be sufficient.
+  This was a testing nightmare and no use cases have been presented.
+* The transition of the method ``return_results()`` to ``results()`` is complete. This was baked-in from the very
+  beginning of the package. It is expected that results would return something, nor is there any other corresponding
+  method prefixed with ``return_``.
+* Pip is now the recommended way to install pylinac. Packaging for conda was somewhat cumbersome. Pylinac itself is just
+  Python and was always installable via pip; it is the dependencies that are complicated.
+  The wheels format seems to be changing that.
+* Some dependency minimum versions have been bumped.
+
+CatPhan
+^^^^^^^
+
+* The module was refactored to easily alter existing and add new catphan models.
+* The CatPhan HU module classifier has been deprecated. Its accuracy was not as high as the original brute force method.
+  Thus, the ``use_classifier`` keyword argument is no longer valid.
+* CatPhan 604 support was added thanks to contributions and datasets from `Alan Chamberlain <https://github.com/alanphys>`_.
+  More datasets are needed to ensure robust analysis, so please contribute your dataset if it fails analysis.
+* The CTP528 slice (High resolution line pairs) behavior was changed to extract the max value from 3 adjacent slices.
+  This was done because sometimes the line pair slice selected was slightly offset from the optimum slice. Using the
+  mean would lower MTF values. While using the max slightly increases the determined MTF from previous versions,
+  the reproducibility was increased across datasets.
+
+Winston-Lutz
+^^^^^^^^^^^^
+
+* Certain properties have been deprecated such as gantry/coll/couch vector to iso.
+  These are dropped in favor of a cumulative vector.
+* A BB shift vector and shift instructions have been added for iterative WL testing.
+  I.e. you can get a BB shift to move the BB to the determined iso easily.
+
+  .. code-block:: python
+
+    import pylinac
+
+    wl = pylinac.WinstonLutz.from_demo_images()
+    print(wl.bb_shift_instructions())
+    # output: RIGHT 0.29mm; DOWN 0.04mm; OUT 0.41mm
+    # shift BB and run it again...
+
+* Images taken at nonzero couch angles are now correctly accounted for in the BB shift.
+* Images now do not take into account shifts along the axis of the beam (`#116 <https://github.com/jrkerns/pylinac/issues/116>`_).
+* The name of the file will now not automatically be interpreted if it can. This could cause issues for valid DICOM files that had sufficient metadata.
+  If the image was taken at Gantry of 45 and the file name contained "gantry001" due to, e.g., TrueBeam's default naming convention it would override the DICOM data.
+  (`#124 <https://github.com/jrkerns/pylinac/issues/124>`_)
+
+Picket Fence
+^^^^^^^^^^^^
+
+* Files can now allow for interpretation by the file name, similar to the WL module. This is helpful for Elekta linacs that may be doing this test (`#126 <https://github.com/jrkerns/pylinac/issues/126>`_).
+
+Core Modules
+^^^^^^^^^^^^
+
+* ``is_dicom`` and ``is_dicom_image`` were moved from the ``utilites`` module to the ``io`` module.
+* ``field_edges()`` had the parameter ``interpolation`` added so that field edges could be computed more accurately (`#123 <https://github.com/jrkerns/pylinac/issues/123>`_)
+* A new class was created called ``LinacDicomImage``. This is a subclass of ``DicomImage`` and currently adds smart gantry/coll/couch angle interpretation but may be extended further in the future.
+
+
 V 2.0.0
 -------
 

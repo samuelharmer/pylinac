@@ -1,5 +1,7 @@
-python:
-  version: 3
+build:
+  image: latest
 
-conda:
-  file: rtdconda.yml
+python:
+  version: 3.6
+
+requirements_file: requirements.txt
